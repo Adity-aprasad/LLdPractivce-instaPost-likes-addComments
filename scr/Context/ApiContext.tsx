@@ -12,7 +12,9 @@ export interface feedContextType {
   isLoading: boolean;
   loadMoreData: () => void;
   hasMore: boolean;
+  isRefetch:()=>Promise<void>
 }
+
 
 const FeedConText = createContext<feedContextType | undefined>(undefined);
 
@@ -23,7 +25,7 @@ const FeedProvider = ({ children }: { children: ReactNode }) => {
   const [hasMore, setHasMore] = useState(true);
 
   // 1. Core Fetch Function
-  const fetchData = async (pageNum: number) => {
+  const fetchData = async (pageNum: number,isRefetch:boolean=false) => {
     if (isLoading) return;
     
     setLoading(true);
@@ -47,7 +49,12 @@ const FeedProvider = ({ children }: { children: ReactNode }) => {
       }));
 
       // 3. Update State: APPEND new data to the previous list
-      setFeed((prev) => [...prev, ...transformedData]);
+      if(isRefetch){
+        setFeed(transformedData)
+      }else{
+         setFeed((prev) => [...prev, ...transformedData]);
+      }
+     
 
       // 4. Check if there's more data (Logic depends on your API)
       // Usually, if the API returns fewer items than the limit, we've reached the end
@@ -75,6 +82,12 @@ const FeedProvider = ({ children }: { children: ReactNode }) => {
       fetchData(nextPage);
     }
   };
+// refetch function 
+  const isRefetch=async()=>{
+    setPage(1);
+    setHasMore(true);
+    await fetchData(1,true)
+  }
 
   const toggleLikes = (id: string) => {
     setFeed((prev) =>
@@ -97,7 +110,7 @@ const FeedProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <FeedConText.Provider value={{ feed, toggleLikes, addComments, loadMoreData, isLoading, hasMore }}>
+    <FeedConText.Provider value={{ feed, toggleLikes, addComments, loadMoreData, isLoading, hasMore ,isRefetch}}>
       {children}
     </FeedConText.Provider>
   );
